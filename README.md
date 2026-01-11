@@ -5,66 +5,75 @@
 ![Runtime](https://img.shields.io/badge/Google%20Apps%20Script-V8-green)
 ![Author](https://img.shields.io/badge/Auteur-Fabrice%20Faucheux-orange)
 
-**Générateur de Prompt (JSON) automatisé via Google Forms.**
+**Générateur de Prompt (JSON) automatisé via Google Forms & Sheets.**
 
-Ce projet Google Apps Script permet de générer des prompts structurés au format JSON (optimisés pour des outils de génération d'images par IA) à partir de réponses simples fournies dans un Google Form. Le résultat est automatiquement formaté et envoyé par email à l'utilisateur.
+Ce projet permet de générer des prompts structurés au format JSON (optimisés pour des outils de génération d'images par IA comme Gemini ou Midjourney) à partir de réponses fournies dans un Google Form. Le résultat est formaté et envoyé par email via un script hébergé dans le tableur de réponses.
 
-## 🚀 Fonctionnalités Clés
+## 📂 Structure du projet
 
-* **Création Automatique de Formulaire** : Script dédié pour générer un Google Form complet avec toutes les questions nécessaires (Description, Style, Ambiance, Ratio, etc.).
-* **Traitement Intelligent** : Nettoyage des entrées utilisateurs et extraction des métadonnées (ex: extraction du ratio "16:9" depuis une chaîne plus longue).
-* **Génération JSON** : Construction d'un objet JSON standardisé contenant le prompt complet, les paramètres techniques et les exclusions (negative prompts).
-* **Notification Email** : Envoi instantané du code JSON formaté (avec coloration syntaxique simulée) directement dans la boîte mail de l'utilisateur.
+Le projet est divisé en deux scripts distincts pour plus de clarté :
 
-## 🛠️ Installation et Configuration
+1.  **`generation_formulaire.gs`** : Script utilitaire "One-shot". Il sert uniquement à créer le Google Form avec toutes les questions pré-configurées (Description, Style, Ratio, etc.).
+2.  **`Code.gs`** : Le moteur du projet. Il doit être placé dans le **Google Sheet (Tableur)** qui reçoit les réponses. Il intercepte les nouvelles lignes, génère le JSON et envoie l'email.
 
-### Prérequis
-* Un compte Google (Google Drive, Gmail).
+## 🚀 Installation et configuration
 
-### Installation Manuelle
+### Étape 1 : Créer le Formulaire
+1.  Créez un nouveau projet Apps Script autonome ("Stand-alone") ou un Google Doc temporaire.
+2.  Copiez-y le code de `generation_formulaire.gs`.
+3.  Exécutez la fonction `creerFormulaireFrancais()`.
+4.  Récupérez l'URL d'édition du formulaire dans les logs (Affichage > Journal d'exécution).
 
-1.  Créez un nouveau projet de script sur [script.google.com](https://script.google.com/).
-2.  Copiez le contenu du fichier `Code.js` de ce dépôt dans l'éditeur Apps Script.
-3.  Sauvegardez le projet (`Ctrl + S` ou `Cmd + S`).
+### Étape 2 : Lier au tableur (Google Sheet)
+1.  Ouvrez le formulaire créé.
+2.  Allez dans l'onglet **Réponses**.
+3.  Cliquez sur **Lier à Sheets** (l'icône verte) pour créer une nouvelle feuille de calcul de destination.
 
-### Configuration
+### Étape 3 : Installer le script  (`Code.gs`)
+⚠️ **C'est l'étape cruciale.** Le script de traitement ne va pas dans le formulaire, mais dans le tableur.
 
-#### Étape 1 : Créer le Formulaire
-1.  Dans l'éditeur de script, sélectionnez la fonction `creerFormulaireFrancais` dans la barre d'outils.
-2.  Cliquez sur **Exécuter**.
-3.  Acceptez les autorisations demandées (accès à Forms, Drive, Mail).
-4.  Une fois le script terminé, l'URL d'édition du formulaire s'affichera dans le journal d'exécution (Logger).
+1.  Ouvrez le **Google Sheet** nouvellement créé.
+2.  Dans le menu, cliquez sur **Extensions** > **Apps Script**.
+3.  Copiez le contenu du fichier `Code.gs` de ce dépôt dans l'éditeur.
+4.  Sauvegardez le projet (`Ctrl + S`).
 
-#### Étape 2 : Mettre en place le Déclencheur (Trigger)
-Pour que le script réagisse à chaque réponse :
-1.  Allez dans la section **Déclencheurs** (icône de réveil) du projet Apps Script.
-2.  Cliquez sur **Ajouter un déclencheur**.
+### Étape 4 : Activer le Déclencheur (Trigger)
+Pour que le script réagisse automatiquement à chaque nouvelle réponse :
+1.  Dans l'éditeur Apps Script (du Sheet), allez dans la section **Déclencheurs** (icône de réveil ⏰ sur la gauche).
+2.  Cliquez sur **Ajouter un déclencheur** (bouton bleu en bas à droite).
 3.  Configurez comme suit :
-    * Fonction à exécuter : `soumettreFormulaire` (ou `onFormSubmit`).
-    * Déploiement : `Tête` (Head).
-    * Source de l'événement : `À partir du formulaire`.
-    * Type d'événement : `Lors de l'envoi du formulaire`.
-4.  Sauvegardez.
+    * **Fonction à exécuter** : `onFormSubmit` (ou `soumettreFormulaire`).
+    * **Déploiement** : `Tête` (Head).
+    * **Source de l'événement** : `À partir de la feuille de calcul`.
+    * **Type d'événement** : `Lors de l'envoi du formulaire`.
+4.  Validez et acceptez les autorisations requises (accès à MailApp, SpreadsheetApp).
 
-## 📦 Structure du Projet
+## 📝 Utilisation
 
-* `Code.js` : Contient la logique principale de réception des données et d'envoi d'email, ainsi que la fonction d'initialisation du formulaire.
-* `README.md` : Documentation du projet.
-* `LICENSE` : Licence MIT.
+Une fois configuré :
+1.  L'utilisateur remplit le formulaire.
+2.  Les données arrivent dans le Google Sheet.
+3.  Le script `Code.gs` se déclenche instantanément.
+4.  L'utilisateur reçoit un email contenant le prompt formaté en JSON prêt à l'emploi.
 
-## 📝 Exemple de Sortie JSON
+## 🛠️ Contenu technique
+
+* **Extraction de données** : Nettoyage des chaînes et extraction intelligente (ex: récupération du ratio "16:9" depuis le libellé long).
+* **JSON Templating** : Création d'un objet standardisé `prompt` / `parameters`.
+* **Sécurité** : Vérification de la présence des champs nommés pour éviter les exécutions hors contexte.
+
+## 📦 Structure du JSON (Réponse)
+
+Le script joint l'image, mais fournit aussi ce JSON dans le corps du mail :
 
 ```json
 {
     "action": "generate",
+    "source": "Vertex AI (Imagen)",
     "prompt": {
-        "subject": "Un chien de type berger australien qui fait de la luge",
-        "style": "Cinématographique",
-        "atmosphere": "Heure Dorée (Lumière chaude du soir)",
-        "full_text": "Un chien de type berger australien qui fait de la luge, style Cinématographique, ambiance Heure Dorée (Lumière chaude du soir). Haute résolution."
+        "full_text": "Un chien astronaute. Style artist: Cinématographique. Atmosphere: Néon..."
     },
     "parameters": {
-        "aspect_ratio": "16:9",
-        "negative_prompt": "flou, mauvaise qualité, texte, filigrane, déformé"
+        "aspect_ratio": "16:9"
     }
 }
